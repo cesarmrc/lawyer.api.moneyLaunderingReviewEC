@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
+WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY SecureHumanLoopCaptcha.sln ./
+COPY src/Shared/SecureHumanLoopCaptcha.Shared.csproj src/Shared/
+COPY src/Worker/SecureHumanLoopCaptcha.Worker.csproj src/Worker/
+RUN dotnet restore SecureHumanLoopCaptcha.sln
+COPY . .
+WORKDIR /src/src/Worker
+RUN dotnet publish SecureHumanLoopCaptcha.Worker.csproj -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=build /app/publish ./
+ENTRYPOINT ["dotnet", "SecureHumanLoopCaptcha.Worker.dll"]
